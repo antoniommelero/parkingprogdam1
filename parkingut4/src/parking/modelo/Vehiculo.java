@@ -4,9 +4,11 @@
  */
 package parking.modelo;
 
+import java.io.Serializable;
 import parking.utilidades.Utilidades;
 
-public class Vehiculo {
+public class Vehiculo  implements Serializable{
+    private static final long serialVersionUID = 1L; // Versión 1 inicial
 
     private String matricula;
     private String propietario;

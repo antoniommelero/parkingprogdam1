@@ -4,10 +4,12 @@
  */
 package parking.modelo;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Ticket {
+public class Ticket implements Serializable{
+    private static final long serialVersionUID = 1L; // Versión 1 inicial
 
     // Formato pars marca temporal
     public final static DateTimeFormatter FORMATO_FECHA_HORA
@@ -23,12 +25,12 @@ public class Ticket {
     private static final double DESCUENTO_ABONADO = 0.10;
 
     // Estadisticas globales
-    private static int totalEntradas = 0;
-    private static int totalSalidas = 0;
-    private static double importeTotalFacturado = 0.0;
-    private static double importeEfectivo = 0.0;
-    private static double importeTarjeta = 0.0;
-    private static double importeMensual = 0.0;
+//    private static int totalEntradas = 0;
+//    private static int totalSalidas = 0;
+//    private static double importeTotalFacturado = 0.0;
+//    private static double importeEfectivo = 0.0;
+//    private static double importeTarjeta = 0.0;
+//    private static double importeMensual = 0.0;
 
     // Atributos de instancia
     private static int contadorTickets = 0;
@@ -50,7 +52,7 @@ public class Ticket {
         this.numeroTicket = contadorTickets;
         this.vehiculo = vehiculo;
         this.fechaEntrada = fechaEntrada;
-        totalEntradas++;
+//        totalEntradas++;
     }
 
     public void salir(LocalDateTime salida, FormaPago formaPago) {
@@ -73,20 +75,20 @@ public class Ticket {
             this.importeTotal = this.importeTotal * (1 - DESCUENTO_ABONADO);
         }
 
-        totalSalidas++;
-        importeTotalFacturado += this.importeTotal;
-
-        switch (this.formaPago) {
-            case EFECTIVO:
-                importeEfectivo += this.importeTotal;
-                break;
-            case TARJETA:
-                importeTarjeta += this.importeTotal;
-                break;
-            case MENSUAL:
-                importeMensual += this.importeTotal;
-                break;
-        }
+//        totalSalidas++;
+//        importeTotalFacturado += this.importeTotal;
+//
+//        switch (this.formaPago) {
+//            case EFECTIVO:
+//                importeEfectivo += this.importeTotal;
+//                break;
+//            case TARJETA:
+//                importeTarjeta += this.importeTotal;
+//                break;
+//            case MENSUAL:
+//                importeMensual += this.importeTotal;
+//                break;
+//        }
     }
 
     public LocalDateTime getFechaEntrada() {
@@ -95,6 +97,22 @@ public class Ticket {
 
     public Vehiculo getVehiculo() {
         return vehiculo;
+    }
+    
+    public int getNumeroTicket() {
+        return numeroTicket;
+    }
+
+    public LocalDateTime getFechaSalida() {
+        return fechaSalida;
+    }
+
+    public FormaPago getFormaPago() {
+        return formaPago;
+    }
+
+    public double getImporteTotal() {
+        return importeTotal;
     }
 
     private double calcularImporte(LocalDateTime entrada, LocalDateTime salida) {
@@ -156,14 +174,14 @@ public class Ticket {
                 + "Importe total: " + String.format("%.2f", importeTotal) + " EUR";
     }
 
-    public static String obtenerResumenFacturacion() {
-        return "RESUMEN DE FACTURACION\n"
-                + "Total entradas: " + totalEntradas + "\n"
-                + "Total salidas: " + totalSalidas + "\n"
-                + "Importe total facturado: " + String.format("%.2f", importeTotalFacturado) + " EUR\n"
-                + "Desglose por forma de pago:\n"
-                + "  Efectivo: " + String.format("%.2f", importeEfectivo) + " EUR\n"
-                + "  Tarjeta: " + String.format("%.2f", importeTarjeta) + " EUR\n"
-                + "  Mensual: " + String.format("%.2f", importeMensual) + " EUR";
-    }
+//    public static String obtenerResumenFacturacion() {
+//        return "RESUMEN DE FACTURACION\n"
+//                + "Total entradas: " + totalEntradas + "\n"
+//                + "Total salidas: " + totalSalidas + "\n"
+//                + "Importe total facturado: " + String.format("%.2f", importeTotalFacturado) + " EUR\n"
+//                + "Desglose por forma de pago:\n"
+//                + "  Efectivo: " + String.format("%.2f", importeEfectivo) + " EUR\n"
+//                + "  Tarjeta: " + String.format("%.2f", importeTarjeta) + " EUR\n"
+//                + "  Mensual: " + String.format("%.2f", importeMensual) + " EUR";
+//    }
 }

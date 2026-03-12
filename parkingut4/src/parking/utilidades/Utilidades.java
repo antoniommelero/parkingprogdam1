@@ -11,8 +11,6 @@ import java.util.Scanner;
 
 public class Utilidades {
 
-    private static Scanner scanner = new Scanner(System.in);
-
     public static void validarMatricula(String matricula) {
         if (matricula == null || matricula.length() != 7) {
             throw new IllegalArgumentException("La matricula debe tener exactamente 7 caracteres.");
@@ -33,7 +31,7 @@ public class Utilidades {
         }
     }
 
-    public static LocalDateTime leerFechaHora(String mensaje) {
+    public static LocalDateTime leerFechaHora(String mensaje, Scanner scanner) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         while (true) {
             System.out.print(mensaje + " (dd/MM/yyyy HH:mm): ");
