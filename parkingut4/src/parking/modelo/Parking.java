@@ -6,6 +6,10 @@ package parking.modelo;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import static parking.modelo.FormaPago.EFECTIVO;
 import static parking.modelo.FormaPago.MENSUAL;
 import static parking.modelo.FormaPago.TARJETA;
@@ -15,11 +19,11 @@ import static parking.modelo.FormaPago.TARJETA;
  * @author Antonio
  */
 public class Parking implements Serializable {
-        private static final long serialVersionUID = 1L; // Versión 1 inicial
+    private static final long serialVersionUID = 2L; // Versión 1 inicial
 
     // Arrays con tamaño EXACTO Cada inserción supone crear uno nuevo 
-    private Ticket[] ticketsAbiertos;
-    private Ticket[] ticketsCerrados;
+    private Map<String, Ticket> ticketsAbiertos;
+    private List<Ticket> ticketsCerrados;
     
     // Estadísticas globales (antes estaban en Ticket)
     private int totalEntradas;
@@ -30,8 +34,8 @@ public class Parking implements Serializable {
     private double importeMensual;
     
     public Parking() {
-        ticketsAbiertos = new Ticket[0];  // empiezan vacios los arrays
-        ticketsCerrados = new Ticket[0];   
+        ticketsAbiertos = new HashMap();  // empiezan vacios los arrays
+        ticketsCerrados = new ArrayList();   
         totalEntradas = 0;
         totalSalidas = 0;
         importeTotalFacturado = 0.0;
@@ -43,17 +47,20 @@ public class Parking implements Serializable {
     //  inserta un nuevo elemento en el array
     public Ticket registrarEntrada(Vehiculo vehiculo, LocalDateTime fechaEntrada) {
         // antes comprueba que no tengamos ya una entrada pendiente de ese vehiculo
-        if (existeTicketAbierto(vehiculo.getMatricula())) {
+        if (ticketsAbiertos.containsKey(vehiculo.getMatricula())) {
             throw new IllegalArgumentException("Ya existe un ticket abierto para la matricula " + vehiculo.getMatricula());
         }
         
         Ticket ticket = new Ticket(vehiculo, fechaEntrada);
         
         // nuevo array con un elemento más que el original
-        Ticket[] nuevoArray = new Ticket[ticketsAbiertos.length + 1];
-        System.arraycopy(ticketsAbiertos, 0, nuevoArray, 0, ticketsAbiertos.length);
-        nuevoArray[ticketsAbiertos.length] = ticket; // nuevo elemento al final
-        ticketsAbiertos = nuevoArray;
+        
+        ticketsAbiertos.put(vehiculo.getMatricula(), ticket);
+        
+//        Ticket[] nuevoArray = new Ticket[ticketsAbiertos.length + 1];
+//        System.arraycopy(ticketsAbiertos, 0, nuevoArray, 0, ticketsAbiertos.length);
+//        nuevoArray[ticketsAbiertos.length] = ticket; // nuevo elemento al final
+//        ticketsAbiertos = nuevoArray;
         totalEntradas++;
         return ticket;
     }
@@ -61,16 +68,19 @@ public class Parking implements Serializable {
     //  Registrar salida: busca ticket, lo cierra y lo cambia de lista
     public Ticket registrarSalida(String matricula, LocalDateTime salida, FormaPago formaPago) {
         // localiza si hay un ticket abierto para esa matricula
-        int indice = buscarIndiceAbiertoPorMatricula(matricula);
-        if (indice == -1) { // no puede salir si no hay entrada de este coche
-            throw new IllegalArgumentException("No existe un ticket abierto para la matricula " + matricula);
-        }    
-        Ticket ticket = ticketsAbiertos[indice]; // recupero el ticket de entrada
+        Ticket ticket = ticketsAbiertos.get(matricula);
+//        int indice = buscarIndiceAbiertoPorMatricula(matricula);
+//        if (indice == -1) { // no puede salir si no hay entrada de este coche
+//            throw new IllegalArgumentException("No existe un ticket abierto para la matricula " + matricula);
+//        }    
+//        Ticket ticket = ticketsAbiertos[indice]; // recupero el ticket de entrada
         ticket.salir(salida, formaPago);  // cambia estado del ticket a 'cerrado'     
         // Eliminar del array de abiertos (crear nuevo array con tamaño -1)
-        eliminarTicketAbierto(indice); 
+        //eliminarTicketAbierto(indice); 
+        ticketsAbiertos.remove(matricula);
         // Añadir al array de cerrados (crear nuevo array con tamaño +1)
-        agregarACerrados(ticket);  
+        ticketsCerrados.add(ticket);
+        //agregarACerrados(ticket);  
         
         // Actualizar estadísticas
         totalSalidas++;
@@ -86,14 +96,15 @@ public class Parking implements Serializable {
     
     //  Devuelve el ticket abierto para esa matricula
     public Ticket obtenerTicketAbierto(String matricula) {
-        int indice = buscarIndiceAbiertoPorMatricula(matricula);
-        return (indice != -1) ? ticketsAbiertos[indice] : null;
+//        int indice = buscarIndiceAbiertoPorMatricula(matricula);
+//        return (indice != -1) ? ticketsAbiertos[indice] : null;
+        return ticketsAbiertos.get(matricula);
     }
     
     // Indica si hay un ticket abierto para esa matrícula
-    public boolean existeTicketAbierto(String matricula) {
-        return buscarIndiceAbiertoPorMatricula(matricula) != -1;
-    }
+//    public boolean existeTicketAbierto(String matricula) {
+//        return ticketsAbiertos.containsKey(matricula);
+//    }
     
     //  Resumen de facturación con estadísticas acumuladas
     public String obtenerResumenFacturacion() {
@@ -109,11 +120,11 @@ public class Parking implements Serializable {
     
     //  Listar tickets abiertos 
     public String listarTicketsAbiertos() {
-        if (ticketsAbiertos.length == 0) {
+        if (ticketsAbiertos.isEmpty()) {
             return "No hay tickets abiertos.";
         }      
         StringBuilder sb = new StringBuilder("TICKETS ABIERTOS:\n");
-        for (Ticket ticket : ticketsAbiertos) {
+        for (Ticket ticket : ticketsAbiertos.values()) {
             sb.append("num: ").append(ticket.getNumeroTicket())
               .append(" - Matricula: ").append(ticket.getVehiculo().getMatricula())
               .append(" - Entrada: ")
@@ -124,7 +135,7 @@ public class Parking implements Serializable {
     
     //  Listar tickets cerrados 
     public String listarTicketsCerrados() {
-        if (ticketsCerrados.length == 0) {
+        if (ticketsCerrados.isEmpty()) {
             return "No hay tickets cerrados.";
         }        
         StringBuilder sb = new StringBuilder("TICKETS CERRADOS:\n");
@@ -142,40 +153,40 @@ public class Parking implements Serializable {
     // métodos privados para gestion interna
        
     //  Eliminar ticket de abiertos SIN dejar huecos (nuevo array con tamaño -1)
-    private void eliminarTicketAbierto(int indice) {
-        if (ticketsAbiertos.length == 1) {
-            // Caso especial: solo queda un ticket
-            ticketsAbiertos = new Ticket[0];
-        } else {
-            // tendrá un elemento menos
-            Ticket[] nuevoArray = new Ticket[ticketsAbiertos.length - 1];
-            // Copiar elementos antes del índice
-            if (indice > 0) {
-                System.arraycopy(ticketsAbiertos, 0, nuevoArray, 0, indice);
-            }
-            // Copiar elementos después del índice
-            if (indice < ticketsAbiertos.length - 1) {
-                System.arraycopy(ticketsAbiertos, indice + 1, nuevoArray, indice, ticketsAbiertos.length - indice - 1);
-            }
-            ticketsAbiertos = nuevoArray;
-        }
-    }
+//    private void eliminarTicketAbierto(int indice) {
+//        if (ticketsAbiertos.length == 1) {
+//            // Caso especial: solo queda un ticket
+//            ticketsAbiertos = new Ticket[0];
+//        } else {
+//            // tendrá un elemento menos
+//            Ticket[] nuevoArray = new Ticket[ticketsAbiertos.length - 1];
+//            // Copiar elementos antes del índice
+//            if (indice > 0) {
+//                System.arraycopy(ticketsAbiertos, 0, nuevoArray, 0, indice);
+//            }
+//            // Copiar elementos después del índice
+//            if (indice < ticketsAbiertos.length - 1) {
+//                System.arraycopy(ticketsAbiertos, indice + 1, nuevoArray, indice, ticketsAbiertos.length - indice - 1);
+//            }
+//            ticketsAbiertos = nuevoArray;
+//        }
+//    }
     
     //  Añadir ticket a cerrados (nuevo array con un elemento más)
-    private void agregarACerrados(Ticket ticket) {
-        Ticket[] nuevoArray = new Ticket[ticketsCerrados.length + 1];
-        System.arraycopy(ticketsCerrados, 0, nuevoArray, 0, ticketsCerrados.length);
-        nuevoArray[ticketsCerrados.length] = ticket;
-        ticketsCerrados = nuevoArray;
-    }
+//    private void agregarACerrados(Ticket ticket) {
+//        Ticket[] nuevoArray = new Ticket[ticketsCerrados.length + 1];
+//        System.arraycopy(ticketsCerrados, 0, nuevoArray, 0, ticketsCerrados.length);
+//        nuevoArray[ticketsCerrados.length] = ticket;
+//        ticketsCerrados = nuevoArray;
+//    }
     
     //  Búsqueda POR MATRÍCULA en tickets abiertos
-    private int buscarIndiceAbiertoPorMatricula(String matricula) {
-        for (int i = 0; i < ticketsAbiertos.length; i++) {
-            if (ticketsAbiertos[i].getVehiculo().getMatricula().equals(matricula)) {
-                return i;
-            }
-        }
-        return -1;
-    }
+//    private int buscarIndiceAbiertoPorMatricula(String matricula) {
+//        for (int i = 0; i < ticketsAbiertos.length; i++) {
+//            if (ticketsAbiertos[i].getVehiculo().getMatricula().equals(matricula)) {
+//                return i;
+//            }
+//        }
+//        return -1;
+//    }
 }
