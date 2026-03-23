@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Ticket implements Serializable{
+public class Ticket implements Serializable, Comparable<Ticket>{
     private static final long serialVersionUID = 1L; // Versión 1 inicial
 
     // Formato pars marca temporal
@@ -89,6 +89,12 @@ public class Ticket implements Serializable{
 //                importeMensual += this.importeTotal;
 //                break;
 //        }
+    }
+    
+    // Orden natural por importeTotal ascendente (requerido para nuevas opciones)
+    @Override
+    public int compareTo(Ticket otro) {
+        return Double.compare(this.importeTotal, otro.importeTotal);
     }
 
     public LocalDateTime getFechaEntrada() {

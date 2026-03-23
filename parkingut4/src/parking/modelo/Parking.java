@@ -7,9 +7,12 @@ package parking.modelo;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import static parking.modelo.FormaPago.EFECTIVO;
 import static parking.modelo.FormaPago.MENSUAL;
 import static parking.modelo.FormaPago.TARJETA;
@@ -149,7 +152,111 @@ public class Parking implements Serializable {
         }
         return sb.toString();
     }
-    
+  
+    // OPCIÓN 6 – Estadísticas usando Collections.max, min y frequency
+    public String obtenerEstadisticas() {
+        if (ticketsCerrados.isEmpty()) {
+            return "No hay tickets cerrados para mostrar estadísticas.";
+        }
+ 
+        Ticket masCaro   = Collections.max(ticketsCerrados);
+        Ticket masBarato = Collections.min(ticketsCerrados);
+ 
+        // Lista auxiliar con solo los valores de FormaPago para usar frequency
+        List<FormaPago> formasPago = new ArrayList<>();
+        for (Ticket t : ticketsCerrados) {
+            formasPago.add(t.getFormaPago());
+        }
+        int numEfectivo = Collections.frequency(formasPago, FormaPago.EFECTIVO);
+        int numTarjeta  = Collections.frequency(formasPago, FormaPago.TARJETA);
+        int numMensual  = Collections.frequency(formasPago, FormaPago.MENSUAL);
+ 
+        return "ESTADISTICAS DE TICKETS CERRADOS\n"
+             + "Ticket mas caro:   #" + masCaro.getNumeroTicket()
+             + " - " + masCaro.getVehiculo().getMatricula()
+             + " - " + String.format("%.2f", masCaro.getImporteTotal()) + " EUR\n"
+             + "Ticket mas barato: #" + masBarato.getNumeroTicket()
+             + " - " + masBarato.getVehiculo().getMatricula()
+             + " - " + String.format("%.2f", masBarato.getImporteTotal()) + " EUR\n"
+             + "Pagos con Efectivo: " + numEfectivo + "\n"
+             + "Pagos con Tarjeta:  " + numTarjeta  + "\n"
+             + "Pagos con Mensual:  " + numMensual  + "\n";
+    }
+ 
+    // OPCIÓN 7 – Buscar tickets cerrados por matrícula usando Stream
+    public String buscarTicketsCerradosPorMatricula(String matricula) {
+        List<Ticket> resultado = ticketsCerrados.stream()
+            .filter(t -> t.getVehiculo().getMatricula().equalsIgnoreCase(matricula))
+            .sorted((t1, t2) -> t1.getFechaEntrada().compareTo(t2.getFechaEntrada()))
+            .collect(Collectors.toList());
+ 
+        if (resultado.isEmpty()) {
+            return "No se encontraron tickets cerrados para la matricula " + matricula;
+        }
+ 
+        StringBuilder sb = new StringBuilder("TICKETS CERRADOS PARA " + matricula + ":\n");
+        for (Ticket t : resultado) {
+            sb.append(" N.").append(t.getNumeroTicket())
+              .append(" - Entrada: ").append(t.getFechaEntrada().format(Ticket.FORMATO_FECHA_HORA))
+              .append(" - Salida: ").append(t.getFechaSalida().format(Ticket.FORMATO_FECHA_HORA))
+              .append(" - Importe: ").append(String.format("%.2f", t.getImporteTotal())).append(" EUR\n");
+        }
+        return sb.toString();
+    }
+ 
+    // OPCIÓN 8 – Listar tickets cerrados ordenados por importe (mayor a menor)
+    public String listarTicketsCerradosOrdenadosPorImporte() {
+        if (ticketsCerrados.isEmpty()) {
+            return "No hay tickets cerrados.";
+        }
+ 
+        // Copia para no alterar el orden original de inserción en la List original
+        List<Ticket> copia = new ArrayList<>(ticketsCerrados);
+        Collections.sort(copia, Collections.reverseOrder()); // usa Comparable<Ticket>
+ 
+        StringBuilder sb = new StringBuilder("TICKETS CERRADOS POR IMPORTE (mayor a menor):\n");
+        sb.append(String.format("%-6s %-10s %-10s %-10s%n", "Num", "Matricula", "Importe", "Forma pago"));
+        sb.append("-".repeat(42)).append("\n");
+        for (Ticket t : copia) {
+            sb.append(String.format("%-6d %-10s %-10s %-10s%n",
+                t.getNumeroTicket(),
+                t.getVehiculo().getMatricula(),
+                String.format("%.2f EUR", t.getImporteTotal()),
+                t.getFormaPago()));
+        }
+        return sb.toString();
+    }
+ 
+    // OPCIÓN 9 – Anular ticket abierto usando Iterator
+    public boolean anularTicketAbierto(String matricula) {
+        Iterator<Map.Entry<String, Ticket>> it = ticketsAbiertos.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Ticket> entrada = it.next();
+            if (entrada.getKey().equalsIgnoreCase(matricula)) {
+                it.remove(); // eliminación segura con Iterator
+                return true;
+            }
+        }
+        return false;
+    }
+ 
+    // OPCIÓN 10 – Array de matrículas de tickets cerrados (para vehículos recurrentes)
+    public String[] obtenerArrayMatriculas() {
+        String[] matriculas = new String[ticketsCerrados.size()];
+        for (int i = 0; i < ticketsCerrados.size(); i++) {
+            matriculas[i] = ticketsCerrados.get(i).getVehiculo().getMatricula();
+        }
+        return matriculas;
+    }
+ 
+    // OPCIÓN 11 – Array de importes de tickets cerrados (para ranking)
+    public double[] obtenerArrayImportes() {
+        double[] importes = new double[ticketsCerrados.size()];
+        for (int i = 0; i < ticketsCerrados.size(); i++) {
+            importes[i] = ticketsCerrados.get(i).getImporteTotal();
+        }
+        return importes;
+    }
     // métodos privados para gestion interna
        
     //  Eliminar ticket de abiertos SIN dejar huecos (nuevo array con tamaño -1)

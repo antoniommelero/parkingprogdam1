@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Scanner;
 import parking.modelo.FormaPago;
 import parking.modelo.Parking;
@@ -36,12 +37,18 @@ public class AplicacionParking {
         int opcion;
         do {
             System.out.println("\n--- MENU PARKING ---");
-            System.out.println("1. Registrar entrada de vehiculo");
-            System.out.println("2. Registrar salida de vehiculo");
-            System.out.println("3. Mostrar resumen de facturacion");
-            System.out.println("4. Listar tickets abiertos");
-            System.out.println("5. Listar tickets cerrados");
-            System.out.println("6. Salir");
+            System.out.println(" 1. Registrar entrada de vehiculo");
+            System.out.println(" 2. Registrar salida de vehiculo");
+            System.out.println(" 3. Mostrar resumen de facturacion");
+            System.out.println(" 4. Listar tickets abiertos");
+            System.out.println(" 5. Listar tickets cerrados");
+            System.out.println(" 6. Estadisticas de tickets cerrados");
+            System.out.println(" 7. Buscar tickets cerrados por matricula");
+            System.out.println(" 8. Listar tickets cerrados por importe");
+            System.out.println(" 9. Anular ticket abierto");
+            System.out.println("10. Vehiculos recurrentes");
+            System.out.println("11. Ranking de los N tickets mas caros");
+            System.out.println("12. Salir");
             System.out.print("Elige una opcion: ");
             opcion = leerEntero();
 
@@ -56,14 +63,19 @@ public class AplicacionParking {
                     listarAbiertos();
                 case 5 ->
                     listarCerrados();
-                case 6 -> {
+                case 6  -> mostrarEstadisticas();
+                case 7  -> buscarPorMatricula();
+                case 8  -> listarPorImporte();
+                case 9  -> anularTicket();
+                case 10 -> vehiculosRecurrentes();
+                case 11 -> rankingTicketsCaros();
+                case 12 -> {
                     guardarParking();
                     System.out.println("Gracias por usar el sistema de parking.");
                 }
-                default ->
-                    System.out.println("Opcion no valida.");
+                default -> System.out.println("Opcion no valida.");
             }
-        } while (opcion != 6);
+        } while (opcion != 12);
 
         teclado.close();
     }
@@ -205,6 +217,112 @@ public class AplicacionParking {
         System.out.println("\n" + parking.listarTicketsCerrados());
     }
 
+    // Opción 6 – Estadísticas
+    private static void mostrarEstadisticas() {
+        System.out.println("\n" + parking.obtenerEstadisticas());
+    }
+ 
+    // Opción 7 – Buscar por matrícula
+    private static void buscarPorMatricula() {
+        System.out.print("Introduce la matricula a buscar: ");
+        String matricula = teclado.nextLine().trim();
+        try {
+            Utilidades.validarMatricula(matricula);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error en matricula: " + e.getMessage());
+            return;
+        }
+        System.out.println("\n" + parking.buscarTicketsCerradosPorMatricula(matricula));
+    }
+ 
+    // Opción 8 – Listar por importe
+    private static void listarPorImporte() {
+        System.out.println("\n" + parking.listarTicketsCerradosOrdenadosPorImporte());
+    }
+ 
+    // Opción 9 – Anular ticket abierto
+    private static void anularTicket() {
+        listarAbiertos();
+        System.out.print("Introduce la matricula del ticket a anular: ");
+        String matricula = teclado.nextLine().trim();
+        try {
+            Utilidades.validarMatricula(matricula);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error en matricula: " + e.getMessage());
+            return;
+        }
+        boolean anulado = parking.anularTicketAbierto(matricula);
+        if (anulado) {
+            System.out.println("Ticket de la matricula " + matricula + " anulado correctamente.");
+        } else {
+            System.out.println("No existe un ticket abierto para la matricula " + matricula);
+        }
+    }
+ 
+    // Opción 10 – Vehículos recurrentes
+    private static void vehiculosRecurrentes() {
+        String[] matriculas = parking.obtenerArrayMatriculas();
+ 
+        if (matriculas.length == 0) {
+            System.out.println("No hay tickets cerrados para analizar.");
+            return;
+        }
+ 
+        Arrays.sort(matriculas); // agrupa repetidas en posiciones consecutivas
+        System.out.println("\nArray de matriculas ordenado: " + Arrays.toString(matriculas));
+ 
+        // Filtra las que aparecen más de una vez usando Arrays.stream y contador interno
+        String[] recurrentes = Arrays.stream(matriculas)
+            .filter(m -> Arrays.stream(matriculas).filter(m::equals).count() > 1)
+            .distinct()
+            .toArray(String[]::new);
+ 
+        if (recurrentes.length == 0) {
+            System.out.println("No se han detectado vehiculos recurrentes.");
+        } else {
+            System.out.println("Vehiculos recurrentes: " + Arrays.toString(recurrentes));
+        }
+    }
+ 
+    // Opción 11 – Ranking de los N tickets más caros
+    private static void rankingTicketsCaros() {
+        double[] importes = parking.obtenerArrayImportes();
+ 
+        if (importes.length == 0) {
+            System.out.println("No hay tickets cerrados para generar el ranking.");
+            return;
+        }
+ 
+        System.out.print("¿Cuantos tickets quieres ver en el ranking? ");
+        int n = leerEntero();
+        if (n <= 0) {
+            System.out.println("El numero debe ser mayor que 0.");
+            return;
+        }
+ 
+        double[] copia = Arrays.copyOf(importes, importes.length); // nunca modificar el original
+        Arrays.sort(copia); // orden ascendente
+ 
+        int disponibles = copia.length;
+        if (n > disponibles) {
+            System.out.println("Solo hay " + disponibles + " tickets cerrados. Se muestran todos.");
+            n = disponibles;
+        }
+ 
+        // Los N mayores están al final del array ordenado ascendente
+        double[] ranking = Arrays.copyOfRange(copia, disponibles - n, disponibles);
+ 
+        // Invertir para mostrar de mayor a menor
+        for (int i = 0; i < ranking.length / 2; i++) {
+            double tmp = ranking[i];
+            ranking[i] = ranking[ranking.length - 1 - i];
+            ranking[ranking.length - 1 - i] = tmp;
+        }
+ 
+        System.out.println("\nRanking de los " + n + " tickets mas caros (EUR):");
+        System.out.println(Arrays.toString(ranking));
+    }
+    // Utilidades
     private static int leerEntero() {
         try {
             return Integer.parseInt(teclado.nextLine().trim());
