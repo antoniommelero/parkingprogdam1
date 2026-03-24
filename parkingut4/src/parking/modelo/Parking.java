@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -187,7 +188,8 @@ public class Parking implements Serializable {
     public String buscarTicketsCerradosPorMatricula(String matricula) {
         List<Ticket> resultado = ticketsCerrados.stream()
             .filter(t -> t.getVehiculo().getMatricula().equalsIgnoreCase(matricula))
-            .sorted((t1, t2) -> t1.getFechaEntrada().compareTo(t2.getFechaEntrada()))
+            //.sorted((t1, t2) -> t1.getFechaEntrada().compareTo(t2.getFechaEntrada()))
+            .sorted(Comparator.comparing(Ticket::getFechaEntrada))
             .collect(Collectors.toList());
  
         if (resultado.isEmpty()) {
