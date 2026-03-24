@@ -148,7 +148,7 @@ public class Parking implements Serializable {
               .append(" - Matricula: ").append(ticket.getVehiculo().getMatricula())
               .append(" - Entrada: ").append(ticket.getFechaEntrada().format(Ticket.FORMATO_FECHA_HORA))
               .append(" - Salida: ").append(ticket.getFechaSalida().format(Ticket.FORMATO_FECHA_HORA))
-              .append(" - Importe: ").append(String.format("%.2f", ticket.getImporteTotal()))
+              .append(" - Importe: ").append(String.format("%10.2f", ticket.getImporteTotal()))
               .append("\n");
         }
         return sb.toString();
@@ -175,10 +175,10 @@ public class Parking implements Serializable {
         return "ESTADISTICAS DE TICKETS CERRADOS\n"
              + "Ticket mas caro:   #" + masCaro.getNumeroTicket()
              + " - " + masCaro.getVehiculo().getMatricula()
-             + " - " + String.format("%.2f", masCaro.getImporteTotal()) + " EUR\n"
+             + " - " + String.format("%10.2f", masCaro.getImporteTotal()) + " EUR\n"
              + "Ticket mas barato: #" + masBarato.getNumeroTicket()
              + " - " + masBarato.getVehiculo().getMatricula()
-             + " - " + String.format("%.2f", masBarato.getImporteTotal()) + " EUR\n"
+             + " - " + String.format("%10.2f", masBarato.getImporteTotal()) + " EUR\n"
              + "Pagos con Efectivo: " + numEfectivo + "\n"
              + "Pagos con Tarjeta:  " + numTarjeta  + "\n"
              + "Pagos con Mensual:  " + numMensual  + "\n";
@@ -201,7 +201,7 @@ public class Parking implements Serializable {
             sb.append(" N.").append(t.getNumeroTicket())
               .append(" - Entrada: ").append(t.getFechaEntrada().format(Ticket.FORMATO_FECHA_HORA))
               .append(" - Salida: ").append(t.getFechaSalida().format(Ticket.FORMATO_FECHA_HORA))
-              .append(" - Importe: ").append(String.format("%.2f", t.getImporteTotal())).append(" EUR\n");
+              .append(" - Importe: ").append(String.format("%10.2f", t.getImporteTotal())).append(" EUR\n");
         }
         return sb.toString();
     }
@@ -220,10 +220,10 @@ public class Parking implements Serializable {
         sb.append(String.format("%-6s %-10s %-10s %-10s%n", "Num", "Matricula", "Importe", "Forma pago"));
         sb.append("-".repeat(42)).append("\n");
         for (Ticket t : copia) {
-            sb.append(String.format("%-6d %-10s %-10s %-10s%n",
+            sb.append(String.format("%6d %-10s %10s %-10s%n",
                 t.getNumeroTicket(),
                 t.getVehiculo().getMatricula(),
-                String.format("%.2f EUR", t.getImporteTotal()),
+                String.format("%10.2f EUR", t.getImporteTotal()),
                 t.getFormaPago()));
         }
         return sb.toString();
