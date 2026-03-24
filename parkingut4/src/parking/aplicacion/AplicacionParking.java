@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Scanner;
 import parking.modelo.FormaPago;
 import parking.modelo.Parking;
@@ -273,9 +274,12 @@ public class AplicacionParking {
  
         // Filtra las que aparecen más de una vez usando Arrays.stream y contador interno
         String[] recurrentes = Arrays.stream(matriculas)
+            // primer filtro : para cada matricula m crea un nuevo Stream con solo las matriculas igual a m (m::equals)
+            // de ese segundo stream cuenta los elementos que tiene (numero de veces que aparece la matricula m del primero)
+            // y filtra solo las que el contador es mayor que 1 (es que tiene repeticiones)
             .filter(m -> Arrays.stream(matriculas).filter(m::equals).count() > 1)
-            .distinct()
-            .toArray(String[]::new);
+            .distinct() // se queda con una sola copia de cada matricula
+            .toArray(String[]::new); // cada matricula se agrega al array 'recurrentes' 
  
         if (recurrentes.length == 0) {
             System.out.println("No se han detectado vehiculos recurrentes.");
@@ -300,25 +304,40 @@ public class AplicacionParking {
             return;
         }
  
-        double[] copia = Arrays.copyOf(importes, importes.length); // nunca modificar el original
-        Arrays.sort(copia); // orden ascendente
+        // si ordenamos de forma ascendente es algo más complejo pues los datos que buscamos
+        // estarán al final del array de double
+//        double[] copia = Arrays.copyOf(importes, importes.length); // nunca modificar el original
+//        Arrays.sort(copia); // orden ascendente pues array de double no permite Comparator
+        
  
-        int disponibles = copia.length;
+        int disponibles = importes.length;
         if (n > disponibles) {
             System.out.println("Solo hay " + disponibles + " tickets cerrados. Se muestran todos.");
             n = disponibles;
         }
- 
+       
         // Los N mayores están al final del array ordenado ascendente
-        double[] ranking = Arrays.copyOfRange(copia, disponibles - n, disponibles);
- 
-        // Invertir para mostrar de mayor a menor
-        for (int i = 0; i < ranking.length / 2; i++) {
-            double tmp = ranking[i];
-            ranking[i] = ranking[ranking.length - 1 - i];
-            ranking[ranking.length - 1 - i] = tmp;
-        }
- 
+//        double[] ranking = Arrays.copyOfRange(copia, disponibles - n, disponibles);
+// 
+//        // Invertir para mostrar de mayor a menor
+//        // se podría recorrer el array desde el final hacia adelante
+//        for (int i = 0; i < ranking.length / 2; i++) {
+//            double tmp = ranking[i];
+//            ranking[i] = ranking[ranking.length - 1 - i];
+//            ranking[ranking.length - 1 - i] = tmp;
+//        }
+// 
+//        System.out.println("\nRanking de los " + n + " tickets mas caros (EUR):");
+//        System.out.println(Arrays.toString(ranking));
+        
+        // ALTERNATIVA para ordenar desde el inicio de importe mayor a menor
+        // En vez de array de double se hace de Double (son objetos luego permite Comparator en sort)
+        Double copia[] = Arrays.stream(importes)
+                .boxed() // cada double se convierte a Double
+                .toArray(Double[]::new); // agrega cada elemento Double a copia
+        Arrays.sort(copia, Comparator.reverseOrder()); // ordena de mayor a menor
+        Double[] ranking = Arrays.copyOfRange(copia,0, n);
+        // nos quedamos solo con los n primeros
         System.out.println("\nRanking de los " + n + " tickets mas caros (EUR):");
         System.out.println(Arrays.toString(ranking));
     }
