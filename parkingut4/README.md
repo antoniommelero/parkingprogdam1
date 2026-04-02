@@ -1,38 +1,41 @@
-# Documentación Técnica — Sistema de Gestión de Parking v4
+# Documentación Técnica — Sistema de Gestión de Parking v5
 
 ## Índice
 1. [Resumen de la versión](#1-resumen-de-la-versión)
-2. [Qué cambia respecto a v3](#2-qué-cambia-respecto-a-v3)
+2. [Qué cambia respecto a v4](#2-qué-cambia-respecto-a-v4)
 3. [Estructura del proyecto](#3-estructura-del-proyecto)
-4. [Cambios en el menú de la aplicación](#4-cambios-en-el-menú-de-la-aplicación)
-5. [Nuevas operaciones en `Parking`](#5-nuevas-operaciones-en-parking)
-6. [Cambios en `Ticket` (Comparable)](#6-cambios-en-ticket-comparable)
-7. [Colecciones/Arrays/Streams utilizados (objetivo didáctico)](#7-coleccionesarraysstreams-utilizados-objetivo-didáctico)
-8. [Persistencia y compatibilidad](#8-persistencia-y-compatibilidad)
-9. [Gestión de errores y casos límite](#9-gestión-de-errores-y-casos-límite)
+4. [Menú de la aplicación](#4-menú-de-la-aplicación)
+5. [Operaciones principales en `Parking` (v4+)](#5-operaciones-principales-en-parking-v4)
+6. [Mejoras de implementación en v5](#6-mejoras-de-implementación-en-v5)
+7. [Cambios en `Ticket` (Comparable)](#7-cambios-en-ticket-comparable)
+8. [Colecciones/Arrays/Streams utilizados (objetivo didáctico)](#8-coleccionesarraysstreams-utilizados-objetivo-didáctico)
+9. [Persistencia y compatibilidad](#9-persistencia-y-compatibilidad)
+10. [Gestión de errores y casos límite](#10-gestión-de-errores-y-casos-límite)
 
 ---
 
 ## 1. Resumen de la versión
 
-**Versión v4** amplía el proyecto v3 añadiendo funcionalidades de consulta/estadística y nuevas opciones de menú, incorporando el uso de:
-
-- `Collections` (`max`, `min`, `frequency`, `sort`)
-- `Iterator` para borrado seguro en colecciones
-- `Streams` (`filter`, `sorted`, `collect`)
-- `Arrays` (`sort`, `copyOf`, `copyOfRange`) para análisis y ranking
+**Versión v5** consolida la ampliación funcional introducida en v4 y se centra en:
+- mejorar la **legibilidad del código** (ordenaciones con `Comparator.comparing(...)`),
+- mejorar la **presentación de listados** (alineación de importes/columnas con `String.format`).
 
 ---
 
-## 2. Qué cambia respecto a v3
+## 2. Qué cambia respecto a v4
 
-| Componente | v3 | v4 |
-|---|---|---|
-| `AplicacionParking` | Menú con 6 opciones | Menú ampliado a 12 opciones (nuevas consultas y utilidades) |
-| `Parking` | Operaciones básicas (entrada/salida/listados/resumen) | Añade estadísticas, búsquedas, ordenaciones, anulación y helpers para arrays |
-| `Ticket` | `Serializable` | `Serializable` + `Comparable<Ticket>` (orden natural por importe) |
+Cambios relevantes observados entre v4 y v5:
 
-> Nota: En v4 ya **no se cumple** el requisito de “no modificar `AplicacionParking`” que se mencionaba en v3, porque la aplicación principal se amplía con nuevas opciones.
+- **Ordenación en Streams más idiomática**:
+  - En `Parking.buscarTicketsCerradosPorMatricula(...)` se sustituye:
+    - `sorted((t1,t2) -> t1.getFechaEntrada().compareTo(t2.getFechaEntrada()))`
+    - por `sorted(Comparator.comparing(Ticket::getFechaEntrada))`
+
+- **Mejoras de formato en salida por consola**:
+  - Importes alineados con ancho fijo:
+    - `String.format("%10.2f", importe)`
+  - Ajustes en la tabla de “tickets cerrados por importe” para alinear mejor:
+    - número y columna de importe.
 
 ---
 
@@ -57,9 +60,9 @@ parking.dat   ← fichero serializado con el estado del parking
 
 ---
 
-## 4. Cambios en el menú de la aplicación
+## 4. Menú de la aplicación
 
-En **v4**, el menú queda así:
+El menú (introducido en v4) se mantiene:
 
 1. Registrar entrada de vehículo  
 2. Registrar salida de vehículo  
@@ -76,7 +79,7 @@ En **v4**, el menú queda así:
 
 ---
 
-## 5. Nuevas operaciones en `Parking`
+## 5. Operaciones principales en `Parking` (v4+)
 
 ### 5.1 `obtenerEstadisticas()`
 Devuelve un bloque de texto con:
@@ -84,105 +87,85 @@ Devuelve un bloque de texto con:
 - Ticket más barato (`Collections.min`)
 - Número de tickets por forma de pago (`Collections.frequency`)
 
-**Requisito clave:** `Ticket` debe ser comparable para poder usar `max/min` con orden natural.
-
 ---
 
 ### 5.2 `buscarTicketsCerradosPorMatricula(String matricula)`
 Busca en `ticketsCerrados`:
 - Filtra por matrícula (ignorando mayúsculas/minúsculas)
 - Ordena por fecha de entrada
-- Devuelve el listado de tickets encontrados o un mensaje si no hay resultados
-
-Implementación destacable:
-- `stream()`
-- `filter(...)`
-- `sorted(...)`
-- `collect(Collectors.toList())`
+- Devuelve el listado o un mensaje si no hay resultados
 
 ---
 
 ### 5.3 `listarTicketsCerradosOrdenadosPorImporte()`
-Devuelve tickets cerrados ordenados por **importe (de mayor a menor)**.
-
-Puntos clave:
-- Copia defensiva de la lista para **no modificar el orden original de inserción**
-- `Collections.sort(copia, Collections.reverseOrder())`
+Devuelve tickets cerrados ordenados por **importe (de mayor a menor)**:
+- copia defensiva + `Collections.sort(..., Collections.reverseOrder())`
 
 ---
 
 ### 5.4 `anularTicketAbierto(String matricula)`
-Permite eliminar (anular) un ticket abierto por matrícula.
-
-Puntos clave:
-- Se recorre `ticketsAbiertos.entrySet()` con `Iterator`
-- Se elimina con `it.remove()` (borrado seguro durante iteración)
-- Devuelve `true` si se anuló, `false` si no existía
+Elimina un ticket abierto por matrícula:
+- recorre `ticketsAbiertos` con `Iterator` y borra con `it.remove()`
 
 ---
 
 ### 5.5 Helpers para Arrays (opciones 10 y 11)
-Para facilitar ejercicios con `Arrays` desde `AplicacionParking`:
-
-- `String[] obtenerArrayMatriculas()`  
-  Devuelve todas las matrículas de `ticketsCerrados`.
-
-- `double[] obtenerArrayImportes()`  
-  Devuelve todos los importes de `ticketsCerrados`.
+- `String[] obtenerArrayMatriculas()`
+- `double[] obtenerArrayImportes()`
 
 ---
 
-## 6. Cambios en `Ticket` (Comparable)
+## 6. Mejoras de implementación en v5
 
-En v4, `Ticket` implementa:
+### 6.1 Uso de `Comparator.comparing(...)`
+v5 usa `Comparator.comparing(Ticket::getFechaEntrada)` para ordenar por fecha de entrada:
+- más legible
+- más mantenible
+- más estándar en Java moderno
 
+### 6.2 Alineación de importes y columnas
+Se mejora el formateo de importes (ancho fijo) para que las tablas/listados sean más claros:
+- `String.format("%10.2f", ...)`
+- y ajustes de `String.format` en el listado por importe.
+
+---
+
+## 7. Cambios en `Ticket` (Comparable)
+
+Desde v4, `Ticket` implementa:
 - `Comparable<Ticket>`
-- `compareTo(Ticket otro)` por `importeTotal` (ascendente)
+- `compareTo(...)` por `importeTotal` (asc)
 
-Esto permite:
-- `Collections.max(ticketsCerrados)` → ticket más caro
-- `Collections.min(ticketsCerrados)` → ticket más barato
-- Ordenaciones basadas en el orden natural del ticket
-
----
-
-## 7. Colecciones/Arrays/Streams utilizados (objetivo didáctico)
-
-- **Collections**
-  - `max/min` para extremos
-  - `frequency` para contar categorías
-  - `sort` + `reverseOrder` para ranking/ordenación
-
-- **Iterator**
-  - Eliminación segura de elementos en un `Map` mientras se itera
-
-- **Streams**
-  - Búsqueda avanzada y ordenación declarativa sobre listas
-
-- **Arrays**
-  - Ordenación y creación de rankings con copias para no alterar datos originales
+Esto habilita:
+- `Collections.max/min` en `ticketsCerrados`
+- ordenaciones basadas en orden natural del ticket
 
 ---
 
-## 8. Persistencia y compatibilidad
+## 8. Colecciones/Arrays/Streams utilizados (objetivo didáctico)
 
-La persistencia sigue siendo por **serialización Java** (`parking.dat`).
-
-⚠️ Importante:
-- Al cambiar la implementación de `Ticket` (ahora implementa `Comparable`), normalmente **no debería romper** compatibilidad por sí solo si no cambian `serialVersionUID` ni la estructura serializada, pero cualquier cambio de clases serializables puede afectar si se modifican campos/UID.
-- Si se producen errores al cargar `parking.dat`, el programa debería recrear el parking (según el manejo que ya existía en versiones previas).
-
----
-
-## 9. Gestión de errores y casos límite
-
-- **Matrículas**: se validan en la aplicación antes de operar (cuando aplica).
-- **Listados/estadísticas**:
-  - Si no hay tickets cerrados, las opciones 6/8/10/11 informan de que no hay datos para analizar.
-- **Ranking (opción 11)**:
-  - Si `n <= 0`, se muestra un mensaje de error.
-  - Si `n > número de tickets cerrados`, se ajusta para mostrar todos los disponibles.
+- **Collections**: `max`, `min`, `frequency`, `sort`, `reverseOrder`
+- **Iterator**: borrado seguro en `Map`
+- **Streams**: `filter`, `sorted`, `collect`
+- **Arrays**: ordenaciones y rankings con copias
 
 ---
 
-**Versión documentada:** v4
+## 9. Persistencia y compatibilidad
+
+Persistencia por **serialización Java** (`parking.dat`).
+
+Nota: cambios en clases serializables pueden afectar compatibilidad con ficheros antiguos si cambian campos/UID.
+
+---
+
+## 10. Gestión de errores y casos límite
+
+- Si no hay tickets cerrados, las opciones de estadísticas/listados informan.
+- En ranking:
+  - `n <= 0` → error
+  - `n > total` → se ajusta a máximo disponible
+
+---
+
+**Versión documentada:** v5
