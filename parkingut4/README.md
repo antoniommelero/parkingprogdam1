@@ -1,171 +1,95 @@
-# Documentación Técnica — Sistema de Gestión de Parking v5
+# Proyecto Parking (PROGDAM 1º DAM) — v5
 
-## Índice
-1. [Resumen de la versión](#1-resumen-de-la-versión)
-2. [Qué cambia respecto a v4](#2-qué-cambia-respecto-a-v4)
-3. [Estructura del proyecto](#3-estructura-del-proyecto)
-4. [Menú de la aplicación](#4-menú-de-la-aplicación)
-5. [Operaciones principales en `Parking` (v4+)](#5-operaciones-principales-en-parking-v4)
-6. [Mejoras de implementación en v5](#6-mejoras-de-implementación-en-v5)
-7. [Cambios en `Ticket` (Comparable)](#7-cambios-en-ticket-comparable)
-8. [Colecciones/Arrays/Streams utilizados (objetivo didáctico)](#8-coleccionesarraysstreams-utilizados-objetivo-didáctico)
-9. [Persistencia y compatibilidad](#9-persistencia-y-compatibilidad)
-10. [Gestión de errores y casos límite](#10-gestión-de-errores-y-casos-límite)
+## Estado actual
+Este repositorio contiene la evolución de un proyecto de **gestión de parking** desarrollado en Java.  
+La versión más reciente del código es **v5** (tag `v5`).
+
+La **documentación técnica por versión** se encuentra en:
+- `parkingut4/README.md` (cambia según la tag/commit en el que estés)
 
 ---
 
-## 1. Resumen de la versión
+## Ejecución del proyecto
 
-**Versión v5** consolida la ampliación funcional introducida en v4 y se centra en:
-- mejorar la **legibilidad del código** (ordenaciones con `Comparator.comparing(...)`),
-- mejorar la **presentación de listados** (alineación de importes/columnas con `String.format`).
+### Opción A: NetBeans (recomendado)
+1. Abre el proyecto en NetBeans.
+2. Localiza la clase principal:
+   - `parkingut4/src/parking/aplicacion/AplicacionParking.java`
+3. Ejecuta el proyecto (Run).
 
----
+> Nota: el programa puede generar/usar `parking.dat` (serialización) como persistencia del estado.
 
-## 2. Qué cambia respecto a v4
+### Opción B: Terminal (javac/java)
+Desde la raíz del repo, compila y ejecuta (ajusta si tu estructura de carpetas/clases difiere):
 
-Cambios relevantes observados entre v4 y v5:
-
-- **Ordenación en Streams más idiomática**:
-  - En `Parking.buscarTicketsCerradosPorMatricula(...)` se sustituye:
-    - `sorted((t1,t2) -> t1.getFechaEntrada().compareTo(t2.getFechaEntrada()))`
-    - por `sorted(Comparator.comparing(Ticket::getFechaEntrada))`
-
-- **Mejoras de formato en salida por consola**:
-  - Importes alineados con ancho fijo:
-    - `String.format("%10.2f", importe)`
-  - Ajustes en la tabla de “tickets cerrados por importe” para alinear mejor:
-    - número y columna de importe.
-
----
-
-## 3. Estructura del proyecto
-
-```
-parkingut4/
-└── src/
-    └── parking/
-        ├── aplicacion/
-        │   └── AplicacionParking.java
-        ├── modelo/
-        │   ├── FormaPago.java
-        │   ├── Vehiculo.java
-        │   ├── Ticket.java
-        │   └── Parking.java
-        └── utilidades/
-            └── Utilidades.java
-
-parking.dat   ← fichero serializado con el estado del parking
+```bash
+cd parkingut4/src
+javac parking/aplicacion/AplicacionParking.java
+java parking.aplicacion.AplicacionParking
 ```
 
 ---
 
-## 4. Menú de la aplicación
+## Cómo navegar por versiones (tags)
 
-El menú (introducido en v4) se mantiene:
+Puedes moverte a una versión concreta con Git:
 
-1. Registrar entrada de vehículo  
-2. Registrar salida de vehículo  
-3. Mostrar resumen de facturación  
-4. Listar tickets abiertos  
-5. Listar tickets cerrados  
-6. Estadísticas de tickets cerrados  
-7. Buscar tickets cerrados por matrícula  
-8. Listar tickets cerrados por importe  
-9. Anular ticket abierto  
-10. Vehículos recurrentes  
-11. Ranking de los N tickets más caros  
-12. Salir  
+```bash
+git fetch --tags
+git switch --detach v4
+```
 
----
+Para volver a `master`:
 
-## 5. Operaciones principales en `Parking` (v4+)
+```bash
+git switch master
+```
 
-### 5.1 `obtenerEstadisticas()`
-Devuelve un bloque de texto con:
-- Ticket más caro (`Collections.max`)
-- Ticket más barato (`Collections.min`)
-- Número de tickets por forma de pago (`Collections.frequency`)
+### Tags principales
+- `v1`: versión inicial (base del enunciado)
+- `v2`: ampliación intermedia
+- `v3`: refactor de estructuras internas (arrays → colecciones en `Parking`)
+- `v4`: ampliación funcional + uso de Collections/Streams/Arrays
+- `v5`: mejoras de implementación (Comparator / formato de salida)
 
 ---
 
-### 5.2 `buscarTicketsCerradosPorMatricula(String matricula)`
-Busca en `ticketsCerrados`:
-- Filtra por matrícula (ignorando mayúsculas/minúsculas)
-- Ordena por fecha de entrada
-- Devuelve el listado o un mensaje si no hay resultados
+## Documentación técnica por versión (dentro de cada versión)
+En cada tag (por ejemplo `v4` o `v5`) puedes leer:
+
+- `parkingut4/README.md`
+
+Ahí se documenta **el estado y decisiones técnicas** de esa versión en concreto.
 
 ---
 
-### 5.3 `listarTicketsCerradosOrdenadosPorImporte()`
-Devuelve tickets cerrados ordenados por **importe (de mayor a menor)**:
-- copia defensiva + `Collections.sort(..., Collections.reverseOrder())`
+## Enunciado original (v1) y objetivo del proyecto
+
+> **Módulo**: Programación — 1.º DAM / DAW  
+> **Resultado de Aprendizaje**: diseño y uso de clases en Java  
+> **Contexto**: aplicación de consola para gestionar un parking (entradas, salidas, facturación y consultas)
+
+### Objetivo general
+Implementar una aplicación que gestione:
+- Entrada de vehículos (creación de ticket)
+- Salida de vehículos (cierre de ticket con forma de pago e importe)
+- Listados y resumen de facturación
+- Persistencia de datos mediante serialización (`parking.dat`)
 
 ---
 
-### 5.4 `anularTicketAbierto(String matricula)`
-Elimina un ticket abierto por matrícula:
-- recorre `ticketsAbiertos` con `Iterator` y borra con `it.remove()`
+## Evolución por versiones (resumen)
+
+| Versión | Idea principal | Cambios destacados |
+|---|---|---|
+| v1 | Versión base | Operaciones básicas de entrada/salida y facturación |
+| v2 | Iteración y mejoras | Consolidación del modelo y lógica |
+| v3 | **Colecciones** | `ticketsAbiertos`: `Map<String,Ticket>` y `ticketsCerrados`: `List<Ticket>` |
+| v4 | **Funcionalidad + técnicas Java** | Menú ampliado y uso de `Collections`, `Streams`, `Arrays`, `Iterator` |
+| v5 | **Refactor + salida** | `Comparator.comparing(...)` y alineación de importes en listados |
 
 ---
 
-### 5.5 Helpers para Arrays (opciones 10 y 11)
-- `String[] obtenerArrayMatriculas()`
-- `double[] obtenerArrayImportes()`
-
----
-
-## 6. Mejoras de implementación en v5
-
-### 6.1 Uso de `Comparator.comparing(...)`
-v5 usa `Comparator.comparing(Ticket::getFechaEntrada)` para ordenar por fecha de entrada:
-- más legible
-- más mantenible
-- más estándar en Java moderno
-
-### 6.2 Alineación de importes y columnas
-Se mejora el formateo de importes (ancho fijo) para que las tablas/listados sean más claros:
-- `String.format("%10.2f", ...)`
-- y ajustes de `String.format` en el listado por importe.
-
----
-
-## 7. Cambios en `Ticket` (Comparable)
-
-Desde v4, `Ticket` implementa:
-- `Comparable<Ticket>`
-- `compareTo(...)` por `importeTotal` (asc)
-
-Esto habilita:
-- `Collections.max/min` en `ticketsCerrados`
-- ordenaciones basadas en orden natural del ticket
-
----
-
-## 8. Colecciones/Arrays/Streams utilizados (objetivo didáctico)
-
-- **Collections**: `max`, `min`, `frequency`, `sort`, `reverseOrder`
-- **Iterator**: borrado seguro en `Map`
-- **Streams**: `filter`, `sorted`, `collect`
-- **Arrays**: ordenaciones y rankings con copias
-
----
-
-## 9. Persistencia y compatibilidad
-
-Persistencia por **serialización Java** (`parking.dat`).
-
-Nota: cambios en clases serializables pueden afectar compatibilidad con ficheros antiguos si cambian campos/UID.
-
----
-
-## 10. Gestión de errores y casos límite
-
-- Si no hay tickets cerrados, las opciones de estadísticas/listados informan.
-- En ranking:
-  - `n <= 0` → error
-  - `n > total` → se ajusta a máximo disponible
-
----
-
-**Versión documentada:** v5
+## Notas
+- El fichero `parking.dat` puede quedar incompatible entre versiones si cambia la estructura serializada.
+- Para ver el comportamiento “exacto” de una versión, usa su **tag** correspondiente.
